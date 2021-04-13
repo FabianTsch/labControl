@@ -9,13 +9,17 @@ CONFIG += c++11
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    daqhat.cpp \
     main.cpp \
     mainwindow.cpp\
     encoder.cpp\
+    BTS7960.cpp
 
 HEADERS += \
+    daqhat.h \
     mainwindow.h\
     encoder.h\
+    BTS7960.h
 
 FORMS += \
     mainwindow.ui
@@ -28,3 +32,5 @@ INCLUDEPATH += /opt/qt5pi/sysroot/usr/include
 
 LIBS += -L"/opt/qt5pi/sysroot/usr/lib"
 LIBS += -lwiringPi
+LIBS += -lpthread
+LIBS += -ldaqhats
