@@ -31,7 +31,6 @@ private:
 
 public:
     Bts7960(QObject* parent = nullptr);
-    void enabelInertiaContoller(const bool &);
     void setDirection(const char &);
 
 
@@ -48,10 +47,13 @@ signals:
   //void checkPin();
 };
 
-class Bts7960_sPWM : QObject{
+class Bts7960_sPWM : public QObject{
     Q_OBJECT
 private:
+    bool running;
     char direction;
+    bool inertia = false;
+    double dblInertia;
     int R_is;
     int R_en;
     int R_pwm;
@@ -59,21 +61,26 @@ private:
     int L_en;
     int L_pwm;
     unsigned int range = 100;
-    int power = 0;
+    double dutyCycle = 0;
 
 public:
-    Bts7960_sPWM(QObject* parent = nullptr);
+    Bts7960_sPWM(int* pin = nullptr, QObject* parent = nullptr);
     void setDirection(const char d);
+    void enabelInertiaContoller(const bool &);
+    void setDutyCycle(const double&);
+    void setInertiaLoad(const double&);
+    bool checkInertiaEnabled();
+    bool checkRunning();
 
 
 public slots:
-    //void applyPressed();
-    //void startPressed();
-    //void stopPressed();
+    void startPressed();
+    void applyPressed();
+    void stopPressed();
 
 signals:
 
-  //void setPower(int);
+
   //void stop();
   //void start(char);
   //void checkPin();

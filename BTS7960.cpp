@@ -20,16 +20,18 @@ Bts7960::Bts7960(QObject* parent)
     pwmWrite(R_pwm,0);
 
 }
+void Bts7960::setDirection(const char &d){direction = d;}
 
-void Bts7960_sPWM::setDirection(const char d){direction = d;}
 
-Bts7960_sPWM::Bts7960_sPWM(QObject* parent)
+Bts7960_sPWM::Bts7960_sPWM(int *pins, QObject* parent)
     : QObject(parent)
 {
-    R_en = 2;
-    R_pwm = 1;
-    L_en = 4;
-    L_pwm = 5;
+    R_en = pins[0];
+    R_pwm = pins[1];
+    L_en = pins[2];
+    L_pwm = pins[3];
+    running = false;
+
     pinMode(R_en,OUTPUT);
     pinMode(R_pwm,OUTPUT);
     pinMode(L_en,OUTPUT);
@@ -40,8 +42,53 @@ Bts7960_sPWM::Bts7960_sPWM(QObject* parent)
     softPwmCreate(L_pwm,0,100);
 }
 
-void Bts7960::setDirection(const char &d){direction = d;}
-void Bts7960::enabelInertiaContoller(const bool &enable){ inertia = enable;}
+
+// Slots
+void Bts7960_sPWM::startPressed(){
+    running = true;
+    digitalWrite(L_en,1);
+    digitalWrite(R_en,1);
+    int d = (int)(dutyCycle*100);
+    if(direction == 'r'){
+        softPwmWrite(L_pwm,0);
+        softPwmWrite(R_pwm,d);
+    }
+    if(direction == 'l'){
+        softPwmWrite(R_pwm,0);
+        softPwmWrite(L_pwm,d);
+    }
+}
+void Bts7960_sPWM::applyPressed(){
+    if(running)
+    {
+        int d = (int)(dutyCycle*100);
+        if(direction == 'r'){
+            softPwmWrite(L_pwm,0);
+            softPwmWrite(R_pwm,d);
+        }
+        if(direction == 'l'){
+            softPwmWrite(R_pwm,0);
+            softPwmWrite(L_pwm,d);
+        }
+    }
+
+}
+void Bts7960_sPWM::stopPressed(){
+    running = false;
+    digitalWrite(L_en,0);
+    digitalWrite(R_en,0);
+    softPwmWrite(L_pwm,0);
+    softPwmWrite(R_pwm,0);
+}
+
+// Access functions:
+void Bts7960_sPWM::setDirection(const char d){direction = d;}
+void Bts7960_sPWM::enabelInertiaContoller(const bool &enable){ inertia =enable; }
+void Bts7960_sPWM::setDutyCycle(const double &d){ dutyCycle = d; }
+void Bts7960_sPWM::setInertiaLoad(const double & I){ dblInertia = I; }
+bool Bts7960_sPWM::checkInertiaEnabled(){ return inertia; }
+bool Bts7960_sPWM::checkRunning(){ return running; }
+
 
 
 
@@ -76,9 +123,7 @@ void Bts7960::checkPin(){
 
 
 
-void Bts7960_sPWM::setPower(int p){
-  power = p;
-}
+
 
 void Bts7960_sPWM::start(char d){
   switch(d){

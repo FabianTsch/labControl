@@ -36,8 +36,8 @@ class MainWindow : public QMainWindow
     Q_OBJECT
     QTimer* timer;
     QThread workThread;
-    //Bts7960 *load;
-    //Bts7960_sPWM *drive;
+    Bts7960_sPWM *load;
+    Bts7960_sPWM *drive;
 
 protected:
     void resizeEvent(QResizeEvent* event);
@@ -61,9 +61,12 @@ public slots:
     void startPressed();
     void handleEncoderResults(const QVector<double>&);
 
+signals:
+    void runMeasure();
 
 
 private slots:
     void on_Start_released();
+    void on_Apply_released();
 };
 #endif // MAINWINDOW_H

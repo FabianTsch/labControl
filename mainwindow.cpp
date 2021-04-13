@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <iostream>
 
 using namespace QtCharts;
 
@@ -10,12 +11,20 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     // Buttons
     QPushButton *start = MainWindow::findChild<QPushButton *>("Start");
+    QPushButton *stop = MainWindow::findChild<QPushButton *>("Stop");
+    QPushButton *apply = MainWindow::findChild<QPushButton *>("Apply");
 
     // Bts7960
-    //drive = new Bts7960_sPWM(this);
-    //load = new Bts7960(this);
-
-
+    int drivePins[] = {2,1,4,5};
+    int loadPins[] = {22,26,27,23};
+    drive = new Bts7960_sPWM(drivePins,this);
+    load = new Bts7960_sPWM(loadPins, this);
+    connect(start,&QAbstractButton::released, load, &Bts7960_sPWM::startPressed);
+    connect(start,&QAbstractButton::released, drive, &Bts7960_sPWM::startPressed);
+    connect(stop,&QAbstractButton::released, load, &Bts7960_sPWM::stopPressed);
+    connect(stop,&QAbstractButton::released, drive, &Bts7960_sPWM::stopPressed);
+    connect(apply,&QAbstractButton::released, load, &Bts7960_sPWM::applyPressed);
+    connect(apply,&QAbstractButton::released, drive, &Bts7960_sPWM::applyPressed);
 
 
     // Threads and Timer Encoder
@@ -24,8 +33,8 @@ MainWindow::MainWindow(QWidget *parent)
     enc->moveToThread(&workThread);
     connect(&workThread, &QThread::finished, enc, &QObject::deleteLater);
     connect(start, &QAbstractButton::released, this, &MainWindow::startPressed);
-    connect(timer, &QTimer::timeout, enc, &Encoder::measure);
     connect(enc, &Encoder::resultReady, this, &MainWindow::handleEncoderResults);
+    connect(this, &MainWindow::runMeasure, enc, &Encoder::measure);
     workThread.start();
 
     // LineChart
@@ -117,7 +126,7 @@ void MainWindow::resizeEvent(QResizeEvent* event){
 
 void MainWindow::startPressed()
 {
-    timer->start(220);
+    emit runMeasure();
 }
 
 void MainWindow::handleEncoderResults(const QVector<double>& resultAgl)
@@ -131,7 +140,7 @@ void MainWindow::handleEncoderResults(const QVector<double>& resultAgl)
     // Calculate
     // speed
       for(int i = 1; i <= size; i++){
-          double f1 = *(angle.end()-1);
+          double f1 = *(angle.end()-i);
           double f2;
           if(angle.end()-(i+2)<angle.begin())
             f2 = 0;
@@ -143,7 +152,7 @@ void MainWindow::handleEncoderResults(const QVector<double>& resultAgl)
     // acceleration
 
       for(int i = 1; i <= size; i++){
-          double f1 = *(speed.end()-1);
+          double f1 = *(speed.end()-i);
           double f2;
           if(speed.end()-(i+2)<speed.begin())
             f2 = 0;
@@ -154,27 +163,48 @@ void MainWindow::handleEncoderResults(const QVector<double>& resultAgl)
 
     //Print
     ui->outAngle->setText(QString::number(angle.back()/360));
-    ui->outSpeed->setText(QString::number(speed.back()/360));
-    ui->outAcceleration->setText(QString::number(acceleration.back()/360));
+    ui->outSpeed->setText(QString::number(speed.back()*60/360));
+    ui->outAcceleration->setText(QString::number(acceleration.back()*60*60/360));
+
+    // Ask for Start again
+    if(load->checkRunning() && drive->checkRunning()){
+        emit runMeasure();
+    }
 }
 
 
 void MainWindow::on_Start_released()
 {
-    /*
-    if(ui->directionRight->isChecked()){
-        drive->setDirection('r');
-        load->setDirection('l');
-    }else if(ui->directionLeft->isChecked()){
-        drive->setDirection('l');
-        load->setDirection('r');
-    }
+    // Grab Input Information from ui to load and drive
     if(ui->selectInertiaLoad->isChecked()){
         load->enabelInertiaContoller(true);
     }else{
         load->enabelInertiaContoller(false);
     }
-    ui->inertiaLoad->setText("HelloWorld");
-    */
+    if(ui->directionLeftDrive->isChecked()) drive->setDirection('l');
+    if(ui->directionRightDrive->isChecked()) drive->setDirection('r');
+    if(ui->directionLeftLoad->isChecked()) load->setDirection('l');
+    if(ui->directionRightLoad->isChecked()) load->setDirection('r');
+    drive->setDutyCycle(ui->dutyCycleDrive->value());
+    load->setDutyCycle(ui->dutyCycleLoad->value());
+    load->setInertiaLoad(ui->inertiaLoad->value());
+
 }
 
+
+void MainWindow::on_Apply_released()
+{
+    // Grab Input Information from ui to load and drive
+    if(ui->selectInertiaLoad->isChecked()){
+        load->enabelInertiaContoller(true);
+    }else{
+        load->enabelInertiaContoller(false);
+    }
+    if(ui->directionLeftDrive->isChecked()) drive->setDirection('l');
+    if(ui->directionRightDrive->isChecked()) drive->setDirection('r');
+    if(ui->directionLeftLoad->isChecked()) load->setDirection('l');
+    if(ui->directionRightLoad->isChecked()) load->setDirection('r');
+    drive->setDutyCycle(ui->dutyCycleDrive->value());
+    load->setDutyCycle(ui->dutyCycleLoad->value());
+    load->setInertiaLoad(ui->inertiaLoad->value());
+}
