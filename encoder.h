@@ -20,7 +20,7 @@ class Encoder : public QObject{
 private:
     int chA_past;
     int chB_past;
-    const size_t readingRounds = 250;
+    const size_t readingRounds = 125;
 
 public slots:
     void measure();
