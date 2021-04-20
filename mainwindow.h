@@ -42,17 +42,6 @@ using namespace QtCharts;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
-    QTimer* timer;
-    QTimer* chartTimer;
-    QThread workThread;
-    Bts7960_sPWM *load;
-    Bts7960_sPWM *drive;
-    QChart *chartLine;
-    QLineSeries *seriesLine;
-    QValueAxis *LineAxisX;
-    QValueAxis *LineAxisY;
-    LineChart *tsChart;
-    BarChart *barChart;
 
 
 protected:
@@ -62,10 +51,13 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
     void connectCamera();
+    int loadDataInString();
 
 
 private:
     Ui::MainWindow *ui;
+    QString currentFile;
+    QString data;
     QCamera* camera;
     QCameraViewfinder* viewfinder;
     QCameraImageCapture* imageCapture;
@@ -81,7 +73,16 @@ private:
     QVector<double> voltageDrive;
     QVector<double> currentLoad;
     QVector<double> currentDrive;
+    QVector<double> daqTimeS;
     const double stepSize = 1.0/50.0;
+    QTimer* timer;
+    QTimer* chartTimer;
+    int intervalDAQ;
+    QThread workThread;
+    Bts7960_sPWM *load;
+    Bts7960_sPWM *drive;
+    LineChart *tsChart;
+    BarChart *barChart;
 
 
 public slots:
@@ -103,5 +104,7 @@ private slots:
     void on_connectButton_clicked();
     void on_captureButton_clicked();
     void on_recordButton_clicked();
+    void on_actionSave_as_triggered();
+    void on_Stop_released();
 };
 #endif // MAINWINDOW_H

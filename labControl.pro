@@ -37,8 +37,10 @@ INCLUDEPATH += /opt/qt5pi/sysroot/usr/local/include
 
 LIBS += -L"/opt/qt5pi/sysroot/usr/lib"
 LIBS += -lwiringPi
-LIBS += -lpthread
+LIBS += -pthread
 LIBS += -ldaqhats
+LIBS += -lrt
+LIBS += -lpigpiod_if2
 
 
 unix:!macx: LIBS += -L$$PWD/../../../../opt/qt5pi/sysroot/opt/vc/lib/ -lbcm_host

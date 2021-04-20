@@ -10,6 +10,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    setWindowTitle("MCI Laboratory");
 
     // Camera
     connected = false;
@@ -30,10 +31,18 @@ MainWindow::MainWindow(QWidget *parent)
     QPushButton *apply = MainWindow::findChild<QPushButton *>("Apply");
 
     // Bts7960
-    int drivePins[] = {2,1,4,5};
-    int loadPins[] = {22,26,27,23};
-    drive = new Bts7960_sPWM(drivePins,this);
-    load = new Bts7960_sPWM(loadPins, this);
+    //int drivePins[] = {2,1,4,5};  WiringPi
+    //int loadPins[] = {22,26,27,23}; WiringPi
+    int pi = pigpio_start(NULL,NULL);
+    qDebug() << gpio_write(pi,27,1) << "\n";
+    qDebug() << gpio_write(pi,16,1);
+
+    int drivePins[] = {27,18,23,24};
+    int loadPins[] = {6,14,16,15};
+    drive = new Bts7960_sPWM(pi,drivePins,this);
+    load = new Bts7960_sPWM(pi,loadPins, this);
+
+
     connect(start,&QAbstractButton::released, load, &Bts7960_sPWM::startPressed);
     connect(start,&QAbstractButton::released, drive, &Bts7960_sPWM::startPressed);
     connect(stop,&QAbstractButton::released, load, &Bts7960_sPWM::stopPressed);
@@ -54,7 +63,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     //daqhat
     timer = new QTimer(this); // Timer start in MainWindow::startPressed
-    timer->setInterval(300);
+    intervalDAQ = 500;
+    timer->setInterval(intervalDAQ);
     Daqhat *daqhat = new Daqhat(this);
     connect(start, &QAbstractButton::released, daqhat, &Daqhat::startPressed);
     connect(timer, &QTimer::timeout, daqhat, &Daqhat::getResults);
@@ -121,6 +131,40 @@ void MainWindow::connectCamera(){
     }
 }
 
+int MainWindow::loadDataInString(){
+    // Error handeling
+    if(load->checkRunning() || drive->checkRunning()){
+        QMessageBox::warning(this, "Warning", "Drive still running");
+        return -1;
+    }
+    bool checkSize = daqTimeS.size() == voltageDrive.size() &&
+            daqTimeS.size() == voltageLoad.size() &&
+            daqTimeS.size() == currentDrive.size() &&
+            daqTimeS.size() == currentLoad.size();
+    if(!checkSize){
+        QMessageBox::warning(this, "Warning", "Vector are not same size");
+        qDebug() << "Size\ntime:" << daqTimeS.size()
+                 << "V Drive: " << voltageDrive.size()
+                 << "V Load: " << voltageLoad.size()
+                 << "I Drive: " << currentDrive.size()
+                 << "I Load: " << currentLoad.size();
+        return -1;
+    }
+
+    // load data in String
+    data.clear();
+    data = "Time / s; V_drive / V;V_load / V;I_drive;I_load;\n";
+    for(int i = 0; i < daqTimeS.size(); i++){
+        QString buf = QString::number(daqTimeS[i]) + ";" +
+                QString::number(voltageDrive[i]) + ";" +
+                QString::number(voltageLoad[i]) + ";" +
+                QString::number(currentDrive[i] ) + ";" +
+                QString::number(currentLoad[i] ) + "\n";
+        data += buf;
+    }
+    return 0;
+}
+
 void MainWindow::resizeEvent(QResizeEvent* event){
     QMainWindow::resizeEvent(event);
 
@@ -128,10 +172,7 @@ void MainWindow::resizeEvent(QResizeEvent* event){
     chartViewLine->resize(chartViewLine->parentWidget()->size());
 }
 
-
-
 // Slots
-
 
 void MainWindow::handleEncoderResults(const QVector<double>& resultAgl)
 {
@@ -189,7 +230,23 @@ void MainWindow::startPressed()
     emit runMeasure();
 }
 
-void MainWindow::handleDaqhatsResults(const QVector<double>& results, int num_channels, int samples_read_per_channel){
+
+void MainWindow::handleDaqhatsResults(const QVector<double>& results, int num_channels,
+                                      int samples_read_per_channel)
+{
+    // Emit Time
+    double samples = samples_read_per_channel;
+    double interval = (double)intervalDAQ/1000.0;
+    double index = interval/samples;
+    qDebug() << "Index: " << index << "samples: " << samples << "interval:" << interval;
+    for(int i = 0; i < samples_read_per_channel; i++){
+        if(daqTimeS.empty())
+            daqTimeS.push_back(index);
+        else
+            daqTimeS.push_back(daqTimeS.back()+index);
+    }
+
+    // Emit Voltages
     for(int i = 0; i < (num_channels*samples_read_per_channel);){
         currentDrive.push_back(results.at(i++));
         currentLoad.push_back(results.at(i++));
@@ -197,6 +254,7 @@ void MainWindow::handleDaqhatsResults(const QVector<double>& results, int num_ch
         voltageLoad.push_back(results.at(i++));
     }
 
+    // Print Life Values
     if(samples_read_per_channel>0){
         ui->outCurrentDrive->setText(QString::number(currentDrive.back()));
         ui->outCurrentLoad->setText(QString::number(currentLoad.back()));
@@ -209,7 +267,6 @@ void MainWindow::synchroniseCharts(){
     emit timeoutBarChart(voltageDrive,voltageLoad,currentDrive,currentLoad);
     emit timeoutLineChart();
 }
-
 
 // Buttons
 void MainWindow::on_Start_released()
@@ -229,7 +286,6 @@ void MainWindow::on_Start_released()
     load->setInertiaLoad(ui->inertiaLoad->value());
 
 }
-
 
 void MainWindow::on_Apply_released()
 {
@@ -283,4 +339,27 @@ void MainWindow::on_recordButton_clicked()
         recorder->stop();
         recording = false;
     }
+}
+
+void MainWindow::on_actionSave_as_triggered()
+{
+    QString fileName = QFileDialog::getSaveFileName(this, "Save as");
+    QFile file(fileName);
+    if(!file.open(QFile::WriteOnly | QFile::Text)){
+        QMessageBox::warning(this, "Warning", "Cannot save file : " + file.errorString());
+        return;
+    }
+    currentFile = fileName;
+    QTextStream out(&file);
+    if(loadDataInString())
+        QMessageBox::warning(this,"Warning", "Could not load data in string");
+    out << data;
+    file.close();
+
+}
+
+void MainWindow::on_Stop_released()
+{
+    chartTimer->stop();
+    timer->stop();
 }

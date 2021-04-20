@@ -16,7 +16,7 @@ Daqhat::Daqhat(QObject *parent) : QObject(parent)
     channel_array = new int[max_channel_array_length];
     num_channels = 4;
     internal_buffer_size_samples = 0;
-    user_buffer_size = 1000 * num_channels;
+    user_buffer_size = 100000 * num_channels;
     read_buf = new double[user_buffer_size];
     total_samples_read = 0;
     read_request_size = READ_ALL_AVAILABLE;
@@ -25,7 +25,7 @@ Daqhat::Daqhat(QObject *parent) : QObject(parent)
     // call to mcc118_a_in_scan_read because we will be requesting that all
     // available samples (up to the default buffer size) be returned.
     timeout = 5.0;
-    scan_rate = 1000.0;
+    scan_rate = 20000.0;
     actual_scan_rate = 0.0;
     mcc118_a_in_scan_actual_rate(num_channels, scan_rate, &actual_scan_rate);
     options = OPTS_CONTINUOUS;
