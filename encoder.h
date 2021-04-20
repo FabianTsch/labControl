@@ -30,21 +30,6 @@ signals:
 
 public:
 
-  //Encoder(std::vector<double>*, std::vector<double>*, std::vector<double>*);
-  //void operator()(int, bool&);      // Eigener Thread für das lesen der Messdaten
-  //double measure();
-  //void addCalcValue(double&);
-  //void clean();
-
-  //double getCurrentAngle();
-  //double getCurrentSpeed();
-  //double getCurrentAcc();
-
-  //std::vector<double>* getAngleVector();
-  //std::vector<double>* getSpeedVector();
-  //std::vector<double>* getAccVector();
-
-
 };
 
 

@@ -33,9 +33,9 @@ MainWindow::MainWindow(QWidget *parent)
     // Bts7960
     //int drivePins[] = {2,1,4,5};  WiringPi
     //int loadPins[] = {22,26,27,23}; WiringPi
-    int pi = pigpio_start(NULL,NULL);
+    pi = pigpio_start(NULL,NULL);
     qDebug() << gpio_write(pi,27,1) << "\n";
-    qDebug() << gpio_write(pi,16,1);
+    qDebug() << gpio_write(pi,16,1) << "" << gpio_read(pi,16);
 
     int drivePins[] = {27,18,23,24};
     int loadPins[] = {6,14,16,15};
@@ -105,6 +105,7 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete ui;
+    pigpio_stop(pi);
     workThread.quit();
     workThread.wait();
 }

@@ -83,6 +83,7 @@ private:
     Bts7960_sPWM *drive;
     LineChart *tsChart;
     BarChart *barChart;
+    int pi;
 
 
 public slots:
