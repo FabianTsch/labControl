@@ -2,7 +2,8 @@
 #include <QApplication>
 #include <QtWidgets/QMainWindow>
 #include <wiringPi.h>
-
+#include "daqhats_utils.h"
+#include <pigpiod_if2.h>
 
 
 
