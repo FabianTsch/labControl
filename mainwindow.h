@@ -18,10 +18,10 @@
 // Threads, Timer and Hardware Objects
 #include<QThread>
 #include<QTimer>
-#include<encoder.h>
 #include<BTS7960.h>
 #include<daqhat.h>
 #include"charts.h"
+#include"Atmega328p.h"
 
 // Charts
 #include <QtCharts/QChartView>
@@ -58,6 +58,7 @@ private:
     Ui::MainWindow *ui;
     QString currentFile;
     QString data;
+    QString capturedData;
     QCamera* camera;
     QCameraViewfinder* viewfinder;
     QCameraImageCapture* imageCapture;
@@ -69,34 +70,41 @@ private:
     QVector<double> angle;
     QVector<double> speed;
     QVector<double> acceleration;
+    QVector<double> encoderTimeS;
     QVector<double> voltageLoad;
     QVector<double> voltageDrive;
     QVector<double> currentLoad;
     QVector<double> currentDrive;
     QVector<double> daqTimeS;
+    QVector<double> loadCell_1;
+    QVector<double> loadCell_2;
     const double stepSize = 1.0/50.0;
     QTimer* timer;
+    QTimer* encoderTimer;
     QTimer* chartTimer;
     int intervalDAQ;
-    QThread workThread;
+    int intervalEncoder;
     Bts7960_sPWM *load;
     Bts7960_sPWM *drive;
     LineChart *tsChart;
     BarChart *barChart;
     int pi;
+    double g;
+    double r;
 
 
 public slots:
     void startPressed();
-    void handleEncoderResults(const QVector<double>&);
+    void handleEncoderResults(int,float,float);
     void handleDaqhatsResults(const QVector<double>&, int, int);
     void synchroniseCharts();
 
 signals:
-    void runMeasure();
+    void clear();
     void timeoutBarChart(QVector<double>& voltageDrive,QVector<double>& voltageLoad,
                          QVector<double>& currentDrive,QVector<double>& currentLoad);
-    void timeoutLineChart();
+    void timeoutLineChart(QVector<double>& angle, QVector<double>& speed,
+                          QVector<double>& acceleration, QVector<double>& encoderTimeS);
 
 
 private slots:
@@ -107,5 +115,8 @@ private slots:
     void on_recordButton_clicked();
     void on_actionSave_as_triggered();
     void on_Stop_released();
+    void on_captureData_clicked();
+    void on_actionSave_triggered();
+    void on_actionclear_all_triggered();
 };
 #endif // MAINWINDOW_H

@@ -12,12 +12,14 @@ LineChart::LineChart(QGraphicsItem *parent, Qt::WindowFlags wFlags):
     m_series(0),
     m_axisX(new QValueAxis()),
     m_axisY(new QValueAxis()),
+    pastPrint(0),
     m_step(0),
-    m_x(5),
-    m_y(1)
+    m_x(0),
+    m_y(0)
+
 {
     m_series = new QLineSeries(this);
-    QPen green(Qt::red);
+    QPen green(Qt::blue);
     green.setWidth(3);
     m_series->setPen(green);
     m_series->append(m_x, m_y);
@@ -29,8 +31,8 @@ LineChart::LineChart(QGraphicsItem *parent, Qt::WindowFlags wFlags):
     m_series->attachAxis(m_axisX);
     m_series->attachAxis(m_axisY);
     m_axisX->setTickCount(5);
-    m_axisX->setRange(0, 6);
-    m_axisY->setRange(-5, 10);
+    m_axisX->setRange(0, 20);
+    m_axisY->setRange(0, 4500);
 }
 
 LineChart::~LineChart()
@@ -38,14 +40,32 @@ LineChart::~LineChart()
 
 }
 
-void LineChart::handleTimeout()
+void LineChart::handleTimeout(QVector<double>& angle, QVector<double>& speed,
+                              QVector<double>& acceleration, QVector<double>& time)
 {
-    qreal x = plotArea().width() / m_axisX->tickCount();
-    qreal y = (m_axisX->max() - m_axisX->min()) / m_axisX->tickCount();
-    m_x += y;
-    m_y = QRandomGenerator::global()->bounded(5) - 2.5;
-    m_series->append(m_x, m_y);
-    scroll(x, 0);
+    qreal dx = 0;
+    qreal dy = 0;
+    qreal tickX = plotArea().width() / m_axisX->tickCount();
+    qreal tickY = plotArea().width() / m_axisY->tickCount();
+    for(; pastPrint < speed.size(); pastPrint++)
+    {
+        m_series->append(time[pastPrint],speed[pastPrint]*60);
+    }
+
+    if(m_axisX->max() < time.back()){
+        dx = tickX*2;
+    }
+
+    if(dx!=0 ||dy!=0){
+        scroll(dx,dy);
+    }
+}
+
+void LineChart::clear()
+{
+    m_series->clear();
+    m_axisX->setRange(0,20);
+    pastPrint = 0;
 }
 
 
@@ -101,10 +121,10 @@ void BarChart::handleTimeout(QVector<double>& voltageDrive,QVector<double>& volt
         iLoad = iLoad/num;
 
         if(barVoltage->count()){
-            barVoltage->replace(0,vDrive);
-            barVoltage->replace(1,vLoad);
-            barCurrent->replace(0,iDrive);
-            barCurrent->replace(1,iLoad);
+            barVoltage->replace(0,vDrive*2);
+            barVoltage->replace(1,vLoad*2);
+            barCurrent->replace(0,iDrive*10-25);
+            barCurrent->replace(1,iLoad*10-25);
 
         }else{
             *barVoltage << vDrive << vLoad;
@@ -112,4 +132,12 @@ void BarChart::handleTimeout(QVector<double>& voltageDrive,QVector<double>& volt
         }
     }
 
+}
+
+void BarChart::clear()
+{
+    barVoltage->replace(0,0);
+    barVoltage->replace(1,0);
+    barCurrent->replace(0,0);
+    barCurrent->replace(1,0);
 }
