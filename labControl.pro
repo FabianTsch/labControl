@@ -9,20 +9,20 @@ CONFIG += c++11
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    Atmega328p.cpp \
     charts.cpp \
     daqhat.cpp \
     daqhats_utils.cpp \
     main.cpp \
     mainwindow.cpp\
-    encoder.cpp\
     BTS7960.cpp
 
 HEADERS += \
+    Atmega328p.h \
     charts.h \
     daqhats_utils.h\
     daqhat.h \
     mainwindow.h\
-    encoder.h\
     BTS7960.h
 
 FORMS += \

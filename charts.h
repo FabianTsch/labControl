@@ -31,13 +31,16 @@ public:
     virtual ~LineChart();
 
 public slots:
-    void handleTimeout();
+    void handleTimeout(QVector<double>&, QVector<double>&,
+                       QVector<double>&, QVector<double>&);
+    void clear();
 
 private:
     QLineSeries *m_series;
     QStringList m_titles;
     QValueAxis *m_axisX;
     QValueAxis *m_axisY;
+    int pastPrint;
     qreal m_step;
     qreal m_x;
     qreal m_y;
@@ -54,6 +57,7 @@ public:
 public slots:
     void handleTimeout(QVector<double>&,QVector<double>&,
                        QVector<double>&,QVector<double>&);
+    void clear();
 
 private:
     QBarSet *barCurrent;

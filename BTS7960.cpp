@@ -32,8 +32,8 @@ Bts7960_sPWM::Bts7960_sPWM(int addr,int *pins, QObject* parent)
         hardware_PWM(pi,R_pwm,hFrequency,0);
         hardware_PWM(pi,L_pwm,hFrequency,0);
     }else{
-        //set_PWM_frequency(pi,L_pwm,sFrequency);
-        //set_PWM_frequency(pi,R_pwm,sFrequency);
+        set_PWM_frequency(pi,L_pwm,sFrequency);
+        set_PWM_frequency(pi,R_pwm,sFrequency);
         set_PWM_dutycycle(pi,R_pwm,10000);
         set_PWM_dutycycle(pi,L_pwm,0);
     }

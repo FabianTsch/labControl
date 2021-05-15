@@ -25,7 +25,7 @@ Daqhat::Daqhat(QObject *parent) : QObject(parent)
     // call to mcc118_a_in_scan_read because we will be requesting that all
     // available samples (up to the default buffer size) be returned.
     timeout = 5.0;
-    scan_rate = 20000.0;
+    scan_rate = 3000;
     actual_scan_rate = 0.0;
     mcc118_a_in_scan_actual_rate(num_channels, scan_rate, &actual_scan_rate);
     options = OPTS_CONTINUOUS;
