@@ -22,6 +22,8 @@
 #include<daqhat.h>
 #include"charts.h"
 #include"Atmega328p.h"
+#include <cstdlib>
+#include <climits>
 
 // Charts
 #include <QtCharts/QChartView>

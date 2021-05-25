@@ -10,7 +10,7 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    wiringPiSetup();
+    wiringPiSetupGpio();
     MainWindow w;
     w.resize(960,1000);
     w.show();

@@ -121,10 +121,10 @@ void BarChart::handleTimeout(QVector<double>& voltageDrive,QVector<double>& volt
         iLoad = iLoad/num;
 
         if(barVoltage->count()){
-            barVoltage->replace(0,vDrive*2);
-            barVoltage->replace(1,vLoad*2);
-            barCurrent->replace(0,iDrive*10-25);
-            barCurrent->replace(1,iLoad*10-25);
+            barVoltage->replace(0,vDrive);
+            barVoltage->replace(1,vLoad);
+            barCurrent->replace(0,iDrive);
+            barCurrent->replace(1,iLoad);
 
         }else{
             *barVoltage << vDrive << vLoad;

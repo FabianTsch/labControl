@@ -10,11 +10,11 @@ Daqhat::Daqhat(QObject *parent) : QObject(parent)
     // mcc118_a_in_scan_start to specify the channels to acquire.
     // The functions below, will parse the channel mask into a
     // character string for display purposes.
-    channel_mask = {CHAN0 | CHAN1 | CHAN2 | CHAN3};
+    channel_mask = {CHAN0 | CHAN1 | CHAN2 | CHAN3 | CHAN4 | CHAN5};
     samples_per_channel = 0;
     max_channel_array_length = mcc118_info()->NUM_AI_CHANNELS;
     channel_array = new int[max_channel_array_length];
-    num_channels = 4;
+    num_channels = 6;
     internal_buffer_size_samples = 0;
     user_buffer_size = 100000 * num_channels;
     read_buf = new double[user_buffer_size];
@@ -75,7 +75,6 @@ void Daqhat::startPressed(){
     result = mcc118_a_in_scan_buffer_size(address,
             &internal_buffer_size_samples);
     STOP_ON_ERROR(result);
-
 }
 
 void Daqhat::stopPressed(){

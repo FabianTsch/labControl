@@ -13,51 +13,59 @@ Bts7960_sPWM::Bts7960_sPWM(int addr,int *pins, QObject* parent)
     
     //test = set_mode(pi,R_en,PI_OUTPUT);
     //test = set_mode(pi,L_en,PI_OUTPUT);
-    gpio_write(pi,R_en,1);
-    gpio_write(pi,L_en,1);
+    pinMode(R_en,OUTPUT);
+    pinMode(L_en,OUTPUT);
+    digitalWrite(R_en,0);
+    digitalWrite(L_en,0);
 
-    //check for Hardware support
-    int hpin[] = {-1,-1,-1}; //18,13,12
-    for(int i = 0; i < 3; i++){
-        if(hpin[i]==R_pwm){
-            for(int k = 0; k < 3; k++){
-                if(hpin[k]==L_pwm)
-                    hardwareSupportPwm = true;
-            }
-        }
-    }
-    // if there is hardware support it will be used
-    // otherwise software pwm will be used
-    if(hardwareSupportPwm){
-        hardware_PWM(pi,R_pwm,hFrequency,0);
-        hardware_PWM(pi,L_pwm,hFrequency,0);
-    }else{
-        set_PWM_frequency(pi,L_pwm,sFrequency);
-        set_PWM_frequency(pi,R_pwm,sFrequency);
-        set_PWM_dutycycle(pi,R_pwm,10000);
-        set_PWM_dutycycle(pi,L_pwm,0);
-    }
+    set_PWM_frequency(pi,L_pwm,sFrequency);
+    set_PWM_frequency(pi,R_pwm,sFrequency);
+    set_PWM_dutycycle(pi,R_pwm,0);
+    set_PWM_dutycycle(pi,L_pwm,0);
+
 }
 
 
 // Slots
 void Bts7960_sPWM::startPressed(){
     running = true;
-    gpio_write(pi,L_en,1);
-    gpio_write(pi,R_en,1);
     int d;
-    if(hardwareSupportPwm){
-        d = (int)(dutyCycle*1000000);
-        if(direction == 'r'){
-            hardware_PWM(pi,L_pwm,hFrequency,0);
-            hardware_PWM(pi,R_pwm,hFrequency,d);
-        }
-        if(direction == 'l'){
-            hardware_PWM(pi,R_pwm,hFrequency,0);
-            hardware_PWM(pi,L_pwm,hFrequency,d);
-        }
-    }else{
+    d = (int)(dutyCycle*255);
+    // make sure Drive disable if not running
+    if(d)
+    {
+        digitalWrite(R_en,1);
+        digitalWrite(L_en,1);
+    }
+    else{
+        digitalWrite(R_en,0);
+        digitalWrite(L_en,0);
+    }
+    if(direction == 'r'){
+        set_PWM_dutycycle(pi,L_pwm,0);
+        set_PWM_dutycycle(pi,R_pwm,d);
+    }
+    if(direction == 'l'){
+        set_PWM_dutycycle(pi,R_pwm,0);
+        set_PWM_dutycycle(pi,L_pwm,d);
+    }
+}
+void Bts7960_sPWM::applyPressed(){
+    int d;
+    if(running)
+    {
+        int d;
         d = (int)(dutyCycle*255);
+        // make sure Drive disable if not running
+        if(d)
+        {
+            digitalWrite(R_en,1);
+            digitalWrite(L_en,1);
+        }
+        else{
+            digitalWrite(R_en,0);
+            digitalWrite(L_en,0);
+        }
         if(direction == 'r'){
             set_PWM_dutycycle(pi,L_pwm,0);
             set_PWM_dutycycle(pi,R_pwm,d);
@@ -67,47 +75,16 @@ void Bts7960_sPWM::startPressed(){
             set_PWM_dutycycle(pi,L_pwm,d);
         }
     }
-}
-void Bts7960_sPWM::applyPressed(){
-    if(running)
-    {
-        int d;
-        if(hardwareSupportPwm){
-            d = (int)(dutyCycle*1000000);
-            if(direction == 'r'){
-                hardware_PWM(pi,L_pwm,hFrequency,0);
-                hardware_PWM(pi,R_pwm,hFrequency,d);
-            }
-            if(direction == 'l'){
-                hardware_PWM(pi,R_pwm,hFrequency,0);
-                hardware_PWM(pi,L_pwm,hFrequency,d);
-            }
-        }else{
-            d = (int)(dutyCycle*255);
-            if(direction == 'r'){
-                set_PWM_dutycycle(pi,L_pwm,0);
-                set_PWM_dutycycle(pi,R_pwm,d);
-            }
-            if(direction == 'l'){
-                set_PWM_dutycycle(pi,R_pwm,0);
-                set_PWM_dutycycle(pi,L_pwm,d);
-            }
-        }
-
-    }
 
 }
 void Bts7960_sPWM::stopPressed(){
     running = false;
     gpio_write(pi,R_en,0);
     gpio_write(pi,L_en,0);
-    if(hardwareSupportPwm){
-        hardware_PWM(pi,R_pwm,hFrequency,0);
-        hardware_PWM(pi,L_pwm,hFrequency,0);
-    }else{
-        set_PWM_dutycycle(pi,R_pwm,0);
-        set_PWM_dutycycle(pi,L_pwm,0);
-    }
+
+    set_PWM_dutycycle(pi,R_pwm,0);
+    set_PWM_dutycycle(pi,L_pwm,0);
+
 }
 
 // Access functions:

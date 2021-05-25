@@ -14,14 +14,6 @@ EncoderControl::EncoderControl(QObject *parent) : QObject(parent)
 
 void EncoderControl::getResults()
 {
-    stop = std::chrono::high_resolution_clock::now();
-    start = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-
-
-    qDebug()<< "Duration" << duration.count() << "\n";
-
-
     int data1[4] = {0};
     int data2[4] = {0};
     int data3[4] = {0};

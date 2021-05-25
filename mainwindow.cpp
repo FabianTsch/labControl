@@ -11,7 +11,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , g(9.81)
-    , r(27.2)
+    , r(42)
 {
     ui->setupUi(this);
     setWindowTitle("MCI Laboratory");
@@ -44,14 +44,16 @@ MainWindow::MainWindow(QWidget *parent)
     drive = new Bts7960_sPWM(pi,drivePins,this);
     load = new Bts7960_sPWM(pi,loadPins, this);
 
-    pinMode(2,OUTPUT);
-    pinMode(4,OUTPUT);
-    pinMode(22,OUTPUT);
+    // pigpiod
+
     pinMode(27,OUTPUT);
-    digitalWrite(2,1);
-    digitalWrite(4,1);
-    digitalWrite(22,1);
+    pinMode(23,OUTPUT);
+    pinMode(6,OUTPUT);
+    pinMode(16,OUTPUT);
     digitalWrite(27,1);
+    digitalWrite(23,1);
+    digitalWrite(6,1);
+    digitalWrite(16,1);
 
 
     connect(start,&QAbstractButton::released, load, &Bts7960_sPWM::startPressed);
@@ -78,7 +80,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 
 
-    //daqhat
+    // daqhat
     timer = new QTimer(this); // Timer start in MainWindow::startPressed
     intervalDAQ = 200;
     timer->setInterval(intervalDAQ);
@@ -177,10 +179,10 @@ int MainWindow::loadDataInString()
     data = "Time / s; V_drive / V;V_load / V;I_drive;I_load;\n";
     for(int i = 0; i < daqTimeS.size(); i++){
         QString buf = QString::number(daqTimeS[i]) + ";" +
-                QString::number(voltageDrive[i]*2) + ";" +
-                QString::number(voltageLoad[i]*2) + ";" +
-                QString::number(currentDrive[i]*10-25) + ";" +
-                QString::number(currentLoad[i]*10-25) + "\n";
+                QString::number(voltageDrive[i]) + ";" +
+                QString::number(voltageLoad[i]) + ";" +
+                QString::number(currentDrive[i]) + ";" +
+                QString::number(currentLoad[i]) + "\n";
         data += buf;
     }
     return 0;
@@ -198,8 +200,8 @@ void MainWindow::resizeEvent(QResizeEvent* event){
 void MainWindow::handleEncoderResults(int steps, float loadCell1, float loadCell2)
 {
     // Torque
-    loadCell_1.push_back(loadCell1*g*r);
-    loadCell_2.push_back(loadCell2+g+r);
+    loadCell_1.push_back(loadCell1*g*r/1000);
+    loadCell_2.push_back(loadCell2*g*r/1000);
 
     // Angle
     double phi = (double)steps/256.0;
@@ -270,10 +272,21 @@ void MainWindow::handleDaqhatsResults(const QVector<double>& results, int num_ch
 
     // Emit Voltages
     for(int i = 0; i < (num_channels*samples_read_per_channel);){
-        currentDrive.push_back(results.at(i++));
-        currentLoad.push_back(results.at(i++));
-        voltageDrive.push_back(results.at(i++));
-        voltageLoad.push_back(results.at(i++));
+        currentDrive.push_back(results.at(i++)*10-24.0);
+        currentLoad.push_back(results.at(i++)*10-24.5);
+
+        // Depending on the direction of rotation, only one voltage is relevant
+        double voltages[4];
+        for(int k = 0; k < 4; k++)
+            voltages[k] = results.at(i++)*1.47;
+        if(std::abs(voltages[0]) > std::abs(voltages[1]))
+            voltageDrive.push_back(voltages[0]);
+        else
+            voltageDrive.push_back(voltages[1]);
+        if(std::abs(voltages[2]) > std::abs(voltages[3]))
+            voltageLoad.push_back(voltages[2]);
+        else
+            voltageLoad.push_back(voltages[3]);
     }
 
     // Print Life Values
@@ -289,10 +302,10 @@ void MainWindow::handleDaqhatsResults(const QVector<double>& results, int num_ch
         avgOut[i] = avgOut[i]/num;
     }
     if(samples_read_per_channel>0){
-        ui->outCurrentDrive->setText(QString::number(avgOut[0]*10-25));
-        ui->outCurrentLoad->setText(QString::number(avgOut[1]*10-25));
-        ui->outVoltageDrive->setText(QString::number(avgOut[2]*2));
-        ui->outVoltageLoad->setText(QString::number(avgOut[3]*2));
+        ui->outCurrentDrive->setText(QString::number(avgOut[0]));
+        ui->outCurrentLoad->setText(QString::number(avgOut[1]));
+        ui->outVoltageDrive->setText(QString::number(avgOut[2]));
+        ui->outVoltageLoad->setText(QString::number(avgOut[3]));
     }
 }
 
@@ -388,13 +401,29 @@ void MainWindow::on_Stop_released()
 
 void MainWindow::on_captureData_clicked()
 {
+    // prepare Data for saving
+    double vDrive = 0;
+    double vLoad = 0;
+    double iDrive = 0;
+    double iLoad = 0;
+    for(int i = 0; i < 120 ; i++){
+        vDrive += *(voltageDrive.end()-i);
+        vLoad += *(voltageLoad.end()-i);
+        iDrive += *(currentDrive.end()-i);
+        iLoad += *(currentLoad.end()-i);
+    }
+    vDrive = vDrive/120;
+    vLoad = vLoad/120;
+    iDrive = iDrive/120;
+    iLoad = iLoad/120;
+    // Load Data in String
     if(capturedData.isEmpty())
         capturedData = "V_drive / V;V_load / V;I_drive;I_load;revolutions;Speed / rpm;Torque / Nmm\n";
     capturedData +=
-            QString::number(voltageDrive.back()*2) + ";" +
-            QString::number(voltageLoad.back()*2) + ";" +
-            QString::number(currentDrive.back()*2*10-25) + ";" +
-            QString::number(currentLoad.back()*10-25) + ";" +
+            QString::number(vDrive) + ";" +
+            QString::number(vLoad) + ";" +
+            QString::number(iDrive) + ";" +
+            QString::number(iLoad) + ";" +
             QString::number(angle.back()) + ";" +
             QString::number(speed.back()*60) + ";";
     if(loadCell_1.back() > loadCell_2.back())
